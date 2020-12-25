@@ -1,7 +1,7 @@
 package chat.client;
 
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicBoolean;
+
 
 import chat.util.Message;
 import chat.util.MsgLogin;
@@ -23,7 +23,11 @@ public class ChatClient {
     static final String HOST = "127.0.0.1";
     static final int PORT = 8189;
     static String clientName;
-    static boolean isAuth=false;
+    static boolean isAuth = false;
+
+    public static void close(){
+        System.exit(0);
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -61,7 +65,7 @@ public class ChatClient {
             while (scanner.hasNext()) {
                 String input = scanner.nextLine();
                 if ("exit".equals(input.toLowerCase())) {
-                    channel.writeAndFlush(new Message(clientName,input));
+                    channel.writeAndFlush(new Message(clientName, input));
                     break;
                 }
                 if (input.startsWith("/")) {

@@ -8,6 +8,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import io.netty.handler.timeout.ReadTimeoutHandler;
 
 
 public final class Server {
@@ -26,6 +27,7 @@ public final class Server {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             ChannelPipeline channelPipeline = ch.pipeline();
+                            channelPipeline.addLast("readTimeoutHandler", new ReadTimeoutHandler(120));
                             channelPipeline.addLast(new ObjectEncoder());
                             channelPipeline.addLast(new ObjectDecoder(ClassResolvers.cacheDisabled(null)));
                             channelPipeline.addLast(new ServerHandler());

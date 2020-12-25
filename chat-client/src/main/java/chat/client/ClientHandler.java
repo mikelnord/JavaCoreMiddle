@@ -17,6 +17,9 @@ public class ClientHandler extends SimpleChannelInboundHandler {
                     System.out.println("Invalid user name or password!");
             } else {
                 System.out.println(((Message) msg).getMessage());
+                if(((Message) msg).getMessage().equals("Timeout exception!")){
+                    ChatClient.close();
+                }
             }
         }
     }

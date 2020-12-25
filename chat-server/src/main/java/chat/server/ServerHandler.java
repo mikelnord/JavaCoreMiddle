@@ -5,6 +5,7 @@ import chat.util.MsgLogin;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.timeout.ReadTimeoutException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -74,9 +75,11 @@ public class ServerHandler extends SimpleChannelInboundHandler {
         }
     }
 
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        System.out.println("Closing connection for client - " + ctx);
+        if(cause instanceof ReadTimeoutException)
+        ctx.writeAndFlush(new Message("Timeout exception!"));
         ctx.close();
     }
 
