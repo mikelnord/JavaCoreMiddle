@@ -11,8 +11,10 @@ public class ClientHandler extends SimpleChannelInboundHandler {
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
         if (msg instanceof Message) {
             if (((Message) msg).getName().equals("Server")) {
-                if (((Message) msg).getMessage().equals("true"))
+                if (((Message) msg).getMessage().equals("true")) {
                     ChatClient.isAuth = true;
+                    ChatClient.clientName = ((Message) msg).getChatName();
+                }
                 else
                     System.out.println("Invalid user name or password!");
             } else {

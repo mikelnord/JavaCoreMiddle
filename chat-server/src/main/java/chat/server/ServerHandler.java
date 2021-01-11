@@ -1,25 +1,26 @@
 package chat.server;
 
+import chat.util.DatabaseConnection;
 import chat.util.Message;
 import chat.util.MsgLogin;
+import chat.util.MsgRename;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ServerHandler extends SimpleChannelInboundHandler {
 
     private static final Map<String, Channel> mLoggedInUsers = new ConcurrentHashMap<>();
-    private static final Map<String, String> users = new ConcurrentHashMap<>();
+    private String chatNik;
+    private int idUser;
 
-    static {
-        users.put("Player1", "123");
-        users.put("Player2", "456");
-        users.put("Player3", "123456");
-    }
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) {
@@ -27,11 +28,18 @@ public class ServerHandler extends SimpleChannelInboundHandler {
     }
 
     private boolean authService(MsgLogin msg) {
-        String pass = users.get(msg.getName());
-        if (pass != null) {
-            if (pass.equals(msg.getPass())) {
+        try {
+            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+            Statement statement = databaseConnection.createStatement();
+            ResultSet resultSet = statement.executeQuery("Select * from Users where Name=\"" + msg.getName() + "\" and Password=\"" + msg.getPass() + "\"");
+            if (resultSet.next()) {
+                chatNik = resultSet.getString("NameChat");
+                idUser = resultSet.getInt("UserId");
                 return true;
             }
+
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
         return false;
     }
@@ -40,20 +48,37 @@ public class ServerHandler extends SimpleChannelInboundHandler {
     protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
         if (msg instanceof MsgLogin) {
             if (authService((MsgLogin) msg)) {
-                ctx.channel().writeAndFlush(new Message("Server", "true"));
+                ctx.channel().writeAndFlush(new Message("Server", "true", chatNik));
                 for (Map.Entry<String, Channel> pair : mLoggedInUsers.entrySet()) {
-                    pair.getValue().writeAndFlush(new Message(((MsgLogin) msg).getName() + " entry in chat!"));
+                    pair.getValue().writeAndFlush(new Message(chatNik + " entry in chat!"));
                 }
-                mLoggedInUsers.put(((MsgLogin) msg).getName(), ctx.channel());
+                mLoggedInUsers.put(chatNik, ctx.channel());
             } else {
                 ctx.channel().writeAndFlush(new Message("Server", "false"));
+            }
+        }
+        if (msg instanceof MsgRename) {
+            String oldName = ((MsgRename) msg).getOldName();
+            String newName = ((MsgRename) msg).getNewName();
+            if (mLoggedInUsers.containsKey(oldName)) {
+                mLoggedInUsers.put(newName, mLoggedInUsers.remove(oldName));
+                chatNik = newName;
+                try {
+                    DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+                    Statement statement = databaseConnection.createStatement();
+                    int resultUpdate = statement.executeUpdate("UPDATE Users SET  NameChat = \"" + newName + "\" WHERE UserId = " + idUser);
+
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+                ctx.channel().writeAndFlush(new Message(oldName + " rename to " + newName));
             }
         }
         if (msg instanceof Message) {
             if ("exit".equals(((Message) msg).getMessage().toLowerCase())) {
                 mLoggedInUsers.remove(((Message) msg).getName());
                 for (Map.Entry<String, Channel> pair : mLoggedInUsers.entrySet()) {
-                    pair.getValue().writeAndFlush(new Message(((Message) msg).getName() + " out of chat!"));
+                    pair.getValue().writeAndFlush(new Message(chatNik + " out of chat!"));
                 }
                 ctx.close();
                 return;
@@ -75,11 +100,10 @@ public class ServerHandler extends SimpleChannelInboundHandler {
         }
     }
 
-
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if(cause instanceof ReadTimeoutException)
-        ctx.writeAndFlush(new Message("Timeout exception!"));
+        if (cause instanceof ReadTimeoutException)
+            ctx.writeAndFlush(new Message("Timeout exception!"));
         ctx.close();
     }
 

@@ -5,6 +5,7 @@ import java.util.Scanner;
 
 import chat.util.Message;
 import chat.util.MsgLogin;
+import chat.util.MsgRename;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -25,7 +26,7 @@ public class ChatClient {
     static String clientName;
     static boolean isAuth = false;
 
-    public static void close(){
+    public static void close() {
         System.exit(0);
     }
 
@@ -73,6 +74,11 @@ public class ChatClient {
                         String name = input.split("\\s", 3)[1];
                         String message = input.split("\\s", 3)[2];
                         channel.writeAndFlush(new Message(name, message));
+                    }
+                    if (input.startsWith("/n ")) {
+                        String oldName = input.split("\\s", 3)[1];
+                        String newName = input.split("\\s", 3)[2];
+                        channel.writeAndFlush(new MsgRename(oldName, newName));
                     }
                 } else {
                     channel.writeAndFlush(new Message(input));
