@@ -28,16 +28,14 @@ public class ServerHandler extends SimpleChannelInboundHandler {
     }
 
     private boolean authService(MsgLogin msg) {
-        try {
-            DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
-            Statement statement = databaseConnection.createStatement();
+        try (DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+             Statement statement = databaseConnection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("Select * from Users where Name=\"" + msg.getName() + "\" and Password=\"" + msg.getPass() + "\"");
             if (resultSet.next()) {
                 chatNik = resultSet.getString("NameChat");
                 idUser = resultSet.getInt("UserId");
                 return true;
             }
-
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
@@ -63,9 +61,8 @@ public class ServerHandler extends SimpleChannelInboundHandler {
             if (mLoggedInUsers.containsKey(oldName)) {
                 mLoggedInUsers.put(newName, mLoggedInUsers.remove(oldName));
                 chatNik = newName;
-                try {
-                    DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
-                    Statement statement = databaseConnection.createStatement();
+                try (DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
+                     Statement statement = databaseConnection.createStatement()) {
                     int resultUpdate = statement.executeUpdate("UPDATE Users SET  NameChat = \"" + newName + "\" WHERE UserId = " + idUser);
 
                 } catch (SQLException throwables) {
@@ -75,7 +72,7 @@ public class ServerHandler extends SimpleChannelInboundHandler {
             }
         }
         if (msg instanceof Message) {
-            if ("exit".equals(((Message) msg).getMessage().toLowerCase())) {
+            if ("exit".equalsIgnoreCase(((Message) msg).getMessage())) {
                 mLoggedInUsers.remove(((Message) msg).getName());
                 for (Map.Entry<String, Channel> pair : mLoggedInUsers.entrySet()) {
                     pair.getValue().writeAndFlush(new Message(chatNik + " out of chat!"));
@@ -95,8 +92,6 @@ public class ServerHandler extends SimpleChannelInboundHandler {
                     channel.writeAndFlush(msg);
                 }
             }
-        } else {
-
         }
     }
 
