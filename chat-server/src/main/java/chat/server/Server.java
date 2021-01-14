@@ -40,7 +40,6 @@ public final class Server {
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
-
         }
     }
 }

@@ -1,8 +1,10 @@
 package chat.client;
 
+import java.nio.ByteBuffer;
 import java.util.Scanner;
 
 
+import chat.util.Logger;
 import chat.util.Message;
 import chat.util.MsgLogin;
 import chat.util.MsgRename;
@@ -25,13 +27,13 @@ public class ChatClient {
     static final int PORT = 8189;
     static String clientName;
     static boolean isAuth = false;
+    static Logger logger;
 
     public static void close() {
         System.exit(0);
     }
 
     public static void main(String[] args) throws Exception {
-
 
         EventLoopGroup group = new NioEventLoopGroup();
         try {
@@ -63,9 +65,11 @@ public class ChatClient {
                 Thread.sleep(1000);
             }
             System.out.println("Добро пожаловать в чат: " + clientName);
+            logger = new Logger("D:\\Temp\\" + "history_" + clientName + ".txt");
+            logger.readFileChannel();
             while (scanner.hasNext()) {
                 String input = scanner.nextLine();
-                if ("exit".equals(input.toLowerCase())) {
+                if ("exit".equalsIgnoreCase(input)) {
                     channel.writeAndFlush(new Message(clientName, input));
                     break;
                 }
@@ -81,9 +85,10 @@ public class ChatClient {
                         channel.writeAndFlush(new MsgRename(oldName, newName));
                     }
                 } else {
-                    channel.writeAndFlush(new Message(input));
+                    String mess = clientName + ": " + input;
+                    channel.writeAndFlush(new Message(mess));
+                    logger.writeFileChannel(ByteBuffer.wrap((mess).getBytes()));
                 }
-
             }
             channelFuture.channel().closeFuture().sync();
         } finally {
