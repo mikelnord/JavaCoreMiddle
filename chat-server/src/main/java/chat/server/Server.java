@@ -9,11 +9,14 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public final class Server {
 
     static final int PORT = 8189;
+    private static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
 
     public static void main(String[] args) throws Exception {
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -34,7 +37,7 @@ public final class Server {
                         }
                     });
             ChannelFuture channelFuture = serverBootstrap.bind(PORT).sync();
-            System.out.println("Chat Server started. Ready to accept chat clients.");
+            logger.info("Chat Server started. Ready to accept chat clients.");
             channelFuture.channel().closeFuture().sync();
 
         } finally {

@@ -4,7 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Scanner;
 
 
-import chat.util.Logger;
+import chat.util.LoggerClient;
 import chat.util.Message;
 import chat.util.MsgLogin;
 import chat.util.MsgRename;
@@ -27,7 +27,7 @@ public class ChatClient {
     static final int PORT = 8189;
     static String clientName;
     static boolean isAuth = false;
-    static Logger logger;
+    static LoggerClient logger;
 
     public static void close() {
         System.exit(0);
@@ -65,7 +65,7 @@ public class ChatClient {
                 Thread.sleep(1000);
             }
             System.out.println("Добро пожаловать в чат: " + clientName);
-            logger = new Logger("D:\\Temp\\" + "history_" + clientName + ".txt");
+            logger = new LoggerClient("D:\\Temp\\" + "history_" + clientName + ".txt");
             logger.readFileChannel();
             while (scanner.hasNext()) {
                 String input = scanner.nextLine();

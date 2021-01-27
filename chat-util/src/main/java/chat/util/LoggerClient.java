@@ -14,11 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Logger {
+public class LoggerClient {
 
     private final String pathFile;
 
-    public Logger(String pathFile) {
+    public LoggerClient(String pathFile) {
         this.pathFile = pathFile;
     }
 

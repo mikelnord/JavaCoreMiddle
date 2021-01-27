@@ -8,6 +8,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.timeout.ReadTimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,6 +22,7 @@ public class ServerHandler extends SimpleChannelInboundHandler {
     private static final Map<String, Channel> mLoggedInUsers = new ConcurrentHashMap<>();
     private String chatNik;
     private int idUser;
+    private static final Logger logger = LoggerFactory.getLogger(Server.class.getName());
 
 
     @Override
@@ -31,12 +34,15 @@ public class ServerHandler extends SimpleChannelInboundHandler {
         try (DatabaseConnection databaseConnection = DatabaseConnection.getInstance();
              Statement statement = databaseConnection.createStatement()) {
             ResultSet resultSet = statement.executeQuery("Select * from Users where Name=\"" + msg.getName() + "\" and Password=\"" + msg.getPass() + "\"");
+            logger.warn("Failed client {} connection!", msg.getName());
             if (resultSet.next()) {
                 chatNik = resultSet.getString("NameChat");
                 idUser = resultSet.getInt("UserId");
+                logger.info("Client {} connect", msg.getName());
                 return true;
             }
         } catch (SQLException throwables) {
+            logger.error("SQLException.", throwables);
             throwables.printStackTrace();
         }
         return false;
@@ -97,14 +103,17 @@ public class ServerHandler extends SimpleChannelInboundHandler {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        if (cause instanceof ReadTimeoutException)
+        if (cause instanceof ReadTimeoutException) {
             ctx.writeAndFlush(new Message("Timeout exception!"));
+            logger.info("Client timeout exception!");
+        }
         ctx.close();
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         super.channelUnregistered(ctx);
-        System.out.println("Closing connection for client - " + ctx);
+        logger.info("Closing connection for client - {}", ctx);
+
     }
 }
